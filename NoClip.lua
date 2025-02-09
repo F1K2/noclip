@@ -1,3 +1,4 @@
+
 --Waits until the player is in game
 repeat wait()
 until game.Players.LocalPlayer and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:findFirstChild("Torso") and game.Players.LocalPlayer.Character:findFirstChild("Humanoid")
