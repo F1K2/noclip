@@ -1,7 +1,3 @@
-----------------------------------------------------
----  A redistribution of https://wearedevs.net/  ---
-----------------------------------------------------
-
 --Waits until the player is in game
 repeat wait()
 until game.Players.LocalPlayer and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:findFirstChild("Torso") and game.Players.LocalPlayer.Character:findFirstChild("Humanoid")
@@ -24,7 +20,7 @@ local bv = nil
 
 --Actual flying
 function Fly()
-	game.StarterGui:SetCore("SendNotification", {Title="Fly Activated"; Text="WeAreDevs.net"; Duration=1;})
+	game.StarterGui:SetCore("SendNotification", {Title="Fly Activated"; Text="Kyze"; Duration=1;})
     bg = Instance.new("BodyGyro", torso)
     bg.P = 9e4
     bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
@@ -63,7 +59,7 @@ function Fly()
     bv:Destroy()
 	bv = nil
     plr.Character.Humanoid.PlatformStand = false
-	game.StarterGui:SetCore("SendNotification", {Title="Fly Deactivated"; Text="WeAreDevs.net"; Duration=1;})
+	game.StarterGui:SetCore("SendNotification", {Title="Fly Deactivated"; Text="Kyze"; Duration=1;})
 end
 
 --Controls
