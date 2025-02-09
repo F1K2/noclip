@@ -1,90 +1,101 @@
--- Script pour activer/désactiver le Noclip et le vol dans Roblox
+----------------------------------------------------
+---  A redistribution of https://wearedevs.net/  ---
+----------------------------------------------------
 
--- Obtenir le joueur local et son personnage
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
+--Waits until the player is in game
+repeat wait()
+until game.Players.LocalPlayer and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:findFirstChild("Torso") and game.Players.LocalPlayer.Character:findFirstChild("Humanoid")
+local mouse = game.Players.LocalPlayer:GetMouse()
 
--- État initial du Noclip et du vol
-local noclip = false
-local flying = false
+--Waits until the player's mouse is found
+repeat wait() until mouse
 
--- Fonction pour gérer les collisions en fonction de l'état du Noclip
-game:GetService("RunService").Stepped:Connect(function()
-    if noclip then
-        -- Si Noclip est activé, désactiver la collision pour toutes les parties du personnage
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
+--Variables
+local plr = game.Players.LocalPlayer
+local torso = plr.Character.Torso
+local flying = true
+local deb = true
+local ctrl = {f = 0, b = 0, l = 0, r = 0}
+local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+local maxspeed = 50
+local speed = 0
+local bg = nil
+local bv = nil
+
+--Actual flying
+function Fly()
+	game.StarterGui:SetCore("SendNotification", {Title="Fly Activated"; Text="WeAreDevs.net"; Duration=1;})
+    bg = Instance.new("BodyGyro", torso)
+    bg.P = 9e4
+    bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.cframe = torso.CFrame
+    bv = Instance.new("BodyVelocity", torso)
+    bv.velocity = Vector3.new(0,0.1,0)
+    bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+    repeat wait()
+      plr.Character.Humanoid.PlatformStand = true
+      if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+        speed = speed+.5+(speed/maxspeed)
+        if speed > maxspeed then
+          speed = maxspeed
         end
-    else
-        -- Si Noclip est désactivé, réactiver la collision pour toutes les parties du personnage
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
+      elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and speed ~= 0 then
+        speed = speed-1
+        if speed < 0 then
+          speed = 0
         end
-    end
+      end
+      if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+        bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f+ctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+        lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+      elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
+        bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f+lastctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l+lastctrl.r,(lastctrl.f+lastctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+      else
+        bv.velocity = Vector3.new(0,0.1,0)
+      end
+      bg.cframe = game.Workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f+ctrl.b)*50*speed/maxspeed),0,0)
+    until not flying
+    ctrl = {f = 0, b = 0, l = 0, r = 0}
+    lastctrl = {f = 0, b = 0, l = 0, r = 0}
+    speed = 0
+    bg:Destroy()
+	bg = nil
+    bv:Destroy()
+	bv = nil
+    plr.Character.Humanoid.PlatformStand = false
+	game.StarterGui:SetCore("SendNotification", {Title="Fly Deactivated"; Text="WeAreDevs.net"; Duration=1;})
+end
+
+--Controls
+mouse.KeyDown:connect(function(key)
+	if key:lower() == "e" then
+		if flying then 
+			flying = false
+		else
+			flying = true
+			Fly()
+		end
+	elseif key:lower() == "w" then
+		ctrl.f = 1
+	elseif key:lower() == "s" then
+		ctrl.b = -1
+	elseif key:lower() == "a" then
+		ctrl.l = -1
+	elseif key:lower() == "d" then
+		ctrl.r = 1
+	end
 end)
 
--- Fonction pour gérer le vol
-local flySpeed = 50 -- Vitesse de vol
-local movement = Vector3.new(0, 0, 0)
-game:GetService("RunService").RenderStepped:Connect(function()
-    if flying then
-        -- Utilisation de la caméra pour déterminer la direction du vol
-        local cam = game.Workspace.CurrentCamera
-        local direction = cam.CFrame.LookVector * movement.Z + cam.CFrame.RightVector * movement.X + Vector3.new(0, movement.Y, 0)
-        
-        -- Déplacer le personnage dans la direction voulue
-        character:MoveTo(character.HumanoidRootPart.Position + direction * (flySpeed * game:GetService("RunService").RenderStepped:Wait()))
-    end
+mouse.KeyUp:connect(function(key)
+	if key:lower() == "w" then
+		ctrl.f = 0
+	elseif key:lower() == "s" then
+		ctrl.b = 0
+	elseif key:lower() == "a" then
+		ctrl.l = 0
+	elseif key:lower() == "d" then
+		ctrl.r = 0
+	end
 end)
 
--- Gestion des entrées pour le vol et le Noclip
-game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed then
-        if input.KeyCode == Enum.KeyCode.N then
-            noclip = not noclip -- Inverser l'état de Noclip
-            flying = noclip -- Assumer que le vol est actif uniquement si le Noclip l'est
-            if noclip then
-                print("Noclip et Vol activés. Appuyez sur N pour désactiver.")
-            else
-                print("Noclip et Vol désactivés. Appuyez sur N pour activer.")
-            end
-        elseif flying then
-            if input.KeyCode == Enum.KeyCode.W then
-                movement = movement + Vector3.new(0, 0, 1)
-            elseif input.KeyCode == Enum.KeyCode.S then
-                movement = movement + Vector3.new(0, 0, -1)
-            elseif input.KeyCode == Enum.KeyCode.A then
-                movement = movement + Vector3.new(-1, 0, 0)
-            elseif input.KeyCode == Enum.KeyCode.D then
-                movement = movement + Vector3.new(1, 0, 0)
-            elseif input.KeyCode == Enum.KeyCode.Space then
-                movement = movement + Vector3.new(0, 1, 0)
-            elseif input.KeyCode == Enum.KeyCode.LeftControl then
-                movement = movement + Vector3.new(0, -1, 0)
-            end
-        end
-    end
-end)
-
--- Arrêter le mouvement quand les touches sont relâchées
-game:GetService("UserInputService").InputEnded:Connect(function(input, gameProcessed)
-    if not gameProcessed and flying then
-        if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S then
-            movement = Vector3.new(movement.X, movement.Y, 0)
-        elseif input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.D then
-            movement = Vector3.new(0, movement.Y, movement.Z)
-        elseif input.KeyCode == Enum.KeyCode.Space or input.KeyCode == Enum.KeyCode.LeftControl then
-            movement = Vector3.new(movement.X, 0, movement.Z)
-        end
-    end
-end)
-
--- Note : 
--- Ce script doit être utilisé avec précaution car l'utilisation de Noclip et de vol peut être considérée comme une triche dans certains serveurs de jeu. 
--- Assurez-vous que vous avez la permission d'utiliser ce type de script sur le serveur où vous jouez.
--- Ce script doit être placé dans un script LocalScript attaché à un objet dans le StarterPlayerScripts.
+Fly()
